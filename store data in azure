@@ -1,0 +1,30 @@
+az storage account create \
+  --kind StorageV2 \
+  --resource-group <resource-group-name> \
+  --location centralus \
+  --name <blob-name>
+
+public Task Initialize()
+{
+    CloudStorageAccount storageAccount = CloudStorageAccount.Parse(storageConfig.ConnectionString);
+    CloudBlobClient blobClient = storageAccount.CreateCloudBlobClient();
+    CloudBlobContainer container = blobClient.GetContainerReference(storageConfig.FileContainerName);
+    return container.CreateIfNotExistsAsync();
+}
+
+
+
+az appservice plan create --name <blob-plan-name> --resource-group <resource-group-name> --sku <sku-name> --location centralus
+az webapp create --name <app-name> --plan <blob-name-plan> --resource-group <resource-group-name>
+CONNECTIONSTRING=$(az storage account show-connection-string --name <blob-name> --output tsv)
+
+az webapp config appsettings set --name <app-name> --resource-group <resource-group-name> --settings AzureStorageConfig:ConnectionString=$CONNECTIONSTRING AzureStorageConfig:FileContainerName=files
+
+
+dotnet publish -o pub
+cd pub
+zip -r ../site.zip *
+az webapp deployment source config-zip --src ../site.zip --name <app-name> --resource-group <resource-group-name>
+
+
+https://<app-name>.azurewebsites.net
