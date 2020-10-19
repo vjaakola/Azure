@@ -1,0 +1,51 @@
+1. Create storage account
+2. Get: settings-activate key
+
+
+3. Create an Azure storage context object
+$context = New-AzureStorageContext -StorageAccountName <name> -StorageAccountKey <storage-account-key>
+
+4. Run the Set-AzStorageServiceMetricsProperty command to configure minute-level storage metrics
+
+Set-AzureStorageServiceMetricsProperty -Context $context -ServiceType Blob -MetricsType Minute -MetricsLevel ServiceAndApi -PassThru -RetentionDays 7
+
+
+verify output:
+Version              MetricsLevel                   RetentionDays
+-------              ------------                   -------------
+1.0                  ServiceAndApi                  7
+
+
+5. Run the following command to view the metrics configuration for the blob service in your storage account.
+
+Get-AzureStorageServiceProperty -Context $context -ServiceType Blob
+
+verify output similar than this:
+Logging.Version                     : 1.0
+Logging.LoggingOperations           : None
+Logging.RetentionDays               :
+HourMetrics.Version                 : 1.0
+HourMetrics.MetricsLevel            : ServiceAndApi
+HourMetrics.RetentionDays           : 7
+MinuteMetrics.Version               : 1.0
+MinuteMetrics.MetricsLevel          : ServiceAndApi
+MinuteMetrics.RetentionDays         : 7
+DeleteRetentionPolicy.Enabled       : False
+DeleteRetentionPolicy.RetentionDays :
+StaticWebsite.Enabled               : False
+StaticWebsite.IndexDocument         :
+StaticWebsite.ErrorDocument404Path  :
+Cors                                :
+DefaultServiceVersion               :
+
+The important items are the HourMetrics and MinuteMetrics properties.
+
+
+
+dotnet run "<storage-account-key>" testcontainer
+
+
+$context = New-AzureStorageContext -StorageAccountName <name> -StorageAccountKey <storage-account-key>
+
+
+Get-AzureStorageServiceLoggingProperty -Context $context -ServiceType Blob
