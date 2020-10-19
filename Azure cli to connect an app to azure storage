@@ -1,0 +1,143 @@
+Connect an app to azure storage
+Demo app: PhotoSharingApp
+
+1. Cretae a new .NET core application
+
+dotnet new console --name PhotoSharingApp
+
+cd PhotoSharingApp
+
+dotnet run
+
+
+2. Use the Azure CLI to create an Azure storage account:
+
+
+
+3. Create Azure storage account
+az storage account create \
+        --resource-group <resource group name> \
+        --kind StorageV2 \
+        --sku Standard_LRS \
+        --access-tier Cool \
+        --name <name>
+
+
+4. Add the Azure Storage NuGet package:
+
+dotnet add package WindowsAzure.Storage
+
+dotnet run
+
+5. Connect to your Azure storage account:
+
+DefaultEndpointsProtocol=https;AccountName={your-storage};
+   AccountKey={your-access-key};
+   EndpointSuffix=core.windows.net
+
+6. Create a JSON configuration file:
+
+touch appsettings.json
+
+
+7. Open Code
+
+code .
+
+8. Append row to: appsettings.json:
+{
+  "StorageAccountConnectionString": "<value>"
+}
+
+9. Get connection string
+
+az storage account show-connection-string \
+    --resource-group <resource-group-name> \
+    --name <app name> \ 
+    --query connectionString
+
+10. Append connection string to appsettings.json
+
+appsettings.json:
+{
+  "StorageAccountConnectionString": "<value>"
+}
+
+
+11. Next, open the project file (PhotoSharingApp.csproj) in the editor.
+Append item group, with file apsettings.json (code below here):
+
+
+
+file: PhotoSharingApp.cspro
+
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <LangVersion>7.1</LangVersion>
+    <TargetFramework>netcoreapp2.2</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="3.1.8" />
+    <PackageReference Include="WindowsAzure.Storage" Version="9.3.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+      <None Update="appsettings.json">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
+  </ItemGroup>
+
+</Project>
+
+12. Save PhotoSharingApp.cspro
+
+13. Command prompt section of the window, add a reference to the Microsoft.Extensions.Configuration.Json NuGet package:
+
+dotnet add package Microsoft.Extensions.Configuration.Json
+
+
+14. Add code to read the configuration file
+
+
+File: Program.cs
+
+using System;
+using Microsoft.Extensions.Configuration;
+using System.IO;
+using Microsoft.WindowsAzure.Storage;
+using System.Threading.Tasks;
+
+namespace PhotoSharingApp
+{
+    class Program
+    {
+        static async Task Main(string[] args)
+        {
+            var builder = new ConfigurationBuilder()
+                .SetBasePath(Directory.GetCurrentDirectory())
+                .AddJsonFile("appsettings.json");
+
+            var configuration = builder.Build();
+            var connectionString = configuration["StorageAccountConnectionString"];
+
+            if (!CloudStorageAccount.TryParse(connectionString, out CloudStorageAccount storageAccount))
+            {
+                Console.WriteLine("Unable to parse connection string");
+                return;
+            }
+
+            var blobClient = storageAccount.CreateCloudBlobClient();
+            var blobContainer = blobClient.GetContainerReference("photoblobs");
+            bool created = await blobContainer.CreateIfNotExistsAsync();
+
+            Console.WriteLine(created ? "Created the Blob container" : "Blob container already exists.");
+        }
+    }
+}
+
+
+15. dotnet run
+
